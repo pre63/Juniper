@@ -15,6 +15,7 @@ let convertTemplate ({tyVars=(_, tyVars); capVars=maybeCapVars} : Ast.Template) 
 let rec convertType menv tyVarMapping capVarMapping (tau : Ast.TyExpr) : T.TyExpr =
     let ct = convertType menv tyVarMapping capVarMapping
     let convertCapacity = convertCapacity capVarMapping
+
     match tau with
     | Ast.ApplyTy {tyConstructor=(_, tyConstructor); args=(_, {tyExprs=(_, tyExprs); capExprs=(_, capExprs)})} ->
         T.ConApp (ct tyConstructor, List.map (Ast.unwrap >> ct) tyExprs, List.map (Ast.unwrap >> convertCapacity) capExprs)
@@ -42,9 +43,11 @@ let rec convertType menv tyVarMapping capVarMapping (tau : Ast.TyExpr) : T.TyExp
         T.ConApp (T.TyCon T.FunTy, returnType'::(List.map (Ast.unwrap >> ct) args), [])
     | Ast.ModuleQualifierTy {module_=(_, module_); name=(_, name)} ->
         T.TyCon <| T.ModuleQualifierTy {module_=module_; name=name}
-    | Ast.NameTy (_, name) ->
-        let (module_, name) = Map.find name menv
-        T.TyCon <| T.ModuleQualifierTy {module_=module_; name=name}
+    | Ast.NameTy ((p1, p2), name) ->
+        let res = Map.tryFind name menv
+        match res with
+        | Some (module_, name) -> T.TyCon <| T.ModuleQualifierTy {module_=module_; name=name}
+        | None -> failwith  (sprintf "file %s, line %d column %d to line %d column %d\n%s is not a valid type" p1.StreamName (p1.Line + 1L) p1.Column (p2.Line + 1L) p2.Column name)
     | Ast.ParensTy (_, tau) ->
         ct tau
     | Ast.RefTy (_, tau) ->
@@ -53,6 +56,7 @@ let rec convertType menv tyVarMapping capVarMapping (tau : Ast.TyExpr) : T.TyExp
         T.ConApp (T.TyCon T.TupleTy, List.map (Ast.unwrap >> ct) taus, [])
     | Ast.VarTy (_, name) ->
         Map.findDefault name (T.TyVar name) tyVarMapping
+   
 
 and convertCapacity capVarMapping (cap : Ast.CapacityExpr) : T.CapacityExpr =
     let convertCapacity = convertCapacity capVarMapping

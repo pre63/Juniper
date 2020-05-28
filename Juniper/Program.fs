@@ -87,3 +87,6 @@ let main argv =
                 | :? System.IO.FileNotFoundException as ex ->
                     printf "%s" ex.Message
                     1
+                | :? System.Exception as ex ->
+                    printf "%s" ex.Message
+                    1
