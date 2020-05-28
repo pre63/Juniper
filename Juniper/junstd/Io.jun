@@ -99,6 +99,23 @@ fun printStr(str : string) : unit =
     #Serial.print(str);#
 
 (*
+    Function: print
+
+    Writes a string to the serial output.
+
+    Type Signature:
+    | (string) -> unit
+
+    Parameters:
+        str : string - The string to write
+
+    Returns:
+        unit
+*)
+fun print(str : string) : unit =
+    #Serial.println(str);#
+
+(*
     Function: printCharList
 
     Writes a character list to the serial output.
